@@ -23,17 +23,23 @@ const SUSPICIOUS_PATTERNS = [
 const containsSuspiciousContent = (text) =>
   SUSPICIOUS_PATTERNS.some((pattern) => pattern.test(text));
 
-const parseJsonWithRetry = async (systemPrompt, userPrompt) => {
-  const attempt = async () => {
+const parseJsonWithRetry = async (systemPrompt, userPrompt, format) => {
+  const attempt = async (attemptNumber) => {
     const raw = await generate(systemPrompt, userPrompt);
-    return JSON.parse(raw);
+    try {
+      return JSON.parse(raw);
+    } catch {
+      throw new Error(
+        `AI returned malformed JSON on attempt ${attemptNumber}. The model may be having trouble with this request — please try rephrasing your prompt.`
+      );
+    }
   };
 
   try {
-    return await attempt();
-  } catch {
-    logger.warn("JSON parse failed on first attempt, retrying...");
-    return await attempt();
+    return await attempt(1);
+  } catch (firstErr) {
+    logger.warn(`JSON parse failed (attempt 1) for format '${format}': ${firstErr.message}. Retrying...`);
+    return await attempt(2);
   }
 };
 
@@ -46,12 +52,15 @@ router.post("/", generateLimiter, validateGenerate, async (req, res, next) => {
 
     if (format === "interactive" || format === "video") {
       try {
-        content = await parseJsonWithRetry(systemPrompt, userPrompt);
+        content = await parseJsonWithRetry(systemPrompt, userPrompt, format);
       } catch (err) {
-        logger.error(`JSON generation failed for format ${format}: ${err.message}`);
+        logger.error(`JSON generation failed after 2 attempts for format '${format}': ${err.message}`);
         return res.status(500).json({
           success: false,
-          error: { code: "GENERATION_ERROR", message: "Failed to generate valid content. Please try again." },
+          error: {
+            code: "GENERATION_ERROR",
+            message: `Failed to generate valid ${format === "interactive" ? "quiz questions" : "video storyboard"} after 2 attempts. The AI model returned an unexpected response. Please try rephrasing your prompt or try again shortly.`,
+          },
         });
       }
     } else if (format === "image") {
@@ -61,10 +70,13 @@ router.post("/", generateLimiter, validateGenerate, async (req, res, next) => {
       const raw = await generate(systemPrompt, userPrompt);
 
       if (containsSuspiciousContent(raw)) {
-        logger.warn("Suspicious content detected in AI response, discarding.");
+        logger.warn(`Suspicious content detected in AI response for format '${format}'. Discarding.`);
         return res.status(500).json({
           success: false,
-          error: { code: "GENERATION_ERROR", message: "Content could not be generated. Please try again." },
+          error: {
+            code: "GENERATION_ERROR",
+            message: "The AI response was flagged as potentially unsafe and has been discarded. Please rephrase your prompt and try again.",
+          },
         });
       }
 

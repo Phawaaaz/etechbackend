@@ -1,11 +1,13 @@
 import rateLimit from "express-rate-limit";
 
-const rateLimitResponse = (req, res) => {
+const makeHandler = (limit, windowMinutes) => (req, res) => {
+  const retryAfter = Math.ceil(res.getHeader("Retry-After") || windowMinutes * 60);
   res.status(429).json({
     success: false,
     error: {
       code: "RATE_LIMIT_EXCEEDED",
-      message: "Too many requests. Please try again later.",
+      message: `You have exceeded the allowed ${limit} requests per ${windowMinutes} minutes from this IP address. Please wait ${retryAfter} seconds before trying again.`,
+      retryAfterSeconds: retryAfter,
     },
   });
 };
@@ -15,7 +17,7 @@ export const generateLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitResponse,
+  handler: makeHandler(20, 15),
 });
 
 export const globalLimiter = rateLimit({
@@ -23,5 +25,5 @@ export const globalLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitResponse,
+  handler: makeHandler(100, 15),
 });
