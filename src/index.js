@@ -35,15 +35,8 @@ app.use(
 );
 app.use(helmet());
 
-// CORS — API routes restricted to the configured frontend origin.
-// The docs UI itself is served same-origin so no CORS header is needed there.
-app.use(
-  cors({
-    origin: config.allowedOrigin,
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Accept"],
-  })
-);
+// CORS — open to all origins.
+app.use(cors());
 
 app.use(globalLimiter);
 app.use(express.json({ limit: "10kb" }));

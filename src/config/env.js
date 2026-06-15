@@ -15,15 +15,17 @@ const ENV_SPEC = [
   },
   {
     key: "ALLOWED_ORIGIN",
-    required: true,
-    description: "The frontend origin that is allowed to call this API (CORS).",
-    hint: 'Set this to your frontend URL, e.g. ALLOWED_ORIGIN=http://localhost:5173 for local dev or ALLOWED_ORIGIN=https://yourdomain.com in production. Do NOT use a wildcard (*).',
+    required: false,
+    default: "*",
+    description: "Optional: restrict CORS to a specific frontend origin. Defaults to open (*) if not set.",
+    hint: 'Set to your frontend URL, e.g. ALLOWED_ORIGIN=https://yourdomain.com to restrict access in production.',
     validate: (v) => {
+      if (v === "*") return true;
       try {
         new URL(v);
         return true;
       } catch {
-        return "Value must be a valid URL (e.g. http://localhost:5173 or https://yourdomain.com).";
+        return "Value must be a valid URL (e.g. http://localhost:5173 or https://yourdomain.com) or omitted entirely.";
       }
     },
   },
