@@ -18,6 +18,7 @@ import coursesRouter from "./routes/courses.js";
 import sectionsRouter from "./routes/sections.js";
 import progressRouter from "./routes/progress.js";
 import subjectsRouter from "./routes/subjects.js";
+import usersRouter from "./routes/users.js";
 
 const app = express();
 
@@ -99,6 +100,7 @@ app.use("/api/courses", coursesRouter);
 app.use("/api/courses/:courseId/sections", sectionsRouter);
 app.use("/api/courses/:courseId", progressRouter);
 app.use("/api/subjects", subjectsRouter);
+app.use("/api/users", usersRouter);
 
 // 404
 app.use((req, res) => {
