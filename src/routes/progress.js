@@ -26,7 +26,7 @@ router.use(protect);
  *       200:
  *         description: Progress records for all sections in the course.
  */
-router.get("/", async (req, res, next) => {
+router.get("/progress", async (req, res, next) => {
   try {
     const progress = await Progress.find({ courseId: req.params.courseId, userId: req.user._id })
       .populate("sectionId", "title order");
@@ -81,7 +81,7 @@ router.get("/", async (req, res, next) => {
  *       200:
  *         description: Progress updated.
  */
-router.patch("/:sectionId/progress", async (req, res, next) => {
+router.patch("/sections/:sectionId/progress", async (req, res, next) => {
   try {
     const statusSchema = z.enum(["in_progress", "completed"]);
     const parsed = statusSchema.safeParse(req.body.status);
@@ -142,7 +142,7 @@ router.patch("/:sectionId/progress", async (req, res, next) => {
  */
 const answersSchema = z.array(z.string().max(500)).min(1).max(10);
 
-router.post("/:sectionId/quiz", sensitiveActionLimiter, async (req, res, next) => {
+router.post("/sections/:sectionId/quiz", sensitiveActionLimiter, async (req, res, next) => {
   try {
     // Validate sectionId is a valid ObjectId
     if (!mongoose.isValidObjectId(req.params.sectionId)) {

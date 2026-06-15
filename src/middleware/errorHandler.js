@@ -294,11 +294,21 @@ export const errorHandler = (err, req, res, next) => {
 
   // ── Generic / unknown fallback ──────────────────────────────────────────
 
+  const isDev = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+
   res.status(500).json({
     success: false,
     error: {
       code: "INTERNAL_ERROR",
-      message: `An unexpected server error occurred. Please try again. ${SUPPORT_HINT}`,
+      message: isDev 
+        ? `Internal Server Error: ${err.message}` 
+        : `An unexpected server error occurred. Please try again. ${SUPPORT_HINT}`,
+      ...(isDev ? {
+        errorType: err.name || "Error",
+        stack: err.stack ? err.stack.split("\n").map((line) => line.trim()) : [],
+        path: req.path,
+        method: req.method,
+      } : {}),
     },
   });
 };

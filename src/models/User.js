@@ -41,12 +41,11 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving. bcrypt silently truncates at 72 bytes,
 // so we enforce max 128 chars at the schema and Zod level.
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 12);
   // Record the time so protect() can reject tokens issued before this moment
   if (!this.isNew) this.passwordChangedAt = new Date();
-  next();
 });
 
 // Compare plain password with stored hash

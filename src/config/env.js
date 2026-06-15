@@ -1,9 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// ── Environment variable definitions ─────────────────────────────────────────
-// Each entry defines whether the variable is required, its default value,
-// a validator function, and a human-readable description + fix hint.
+
 
 const ENV_SPEC = [
   {
