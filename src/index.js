@@ -37,6 +37,17 @@ app.use(
 app.use("/api/health", healthRouter);
 app.use("/api/generate", generateRouter);
 
+// 404 — unknown route
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      code: "NOT_FOUND",
+      message: `Route '${req.method} ${req.path}' does not exist. Available endpoints: GET /api/health, POST /api/generate.`,
+    },
+  });
+});
+
 app.use(errorHandler);
 
 app.listen(config.port, () => {
