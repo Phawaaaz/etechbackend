@@ -3,8 +3,10 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 import { config } from "./config/env.js";
 import { logger } from "./config/logger.js";
+import { swaggerSpec } from "./config/swagger.js";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import healthRouter from "./routes/health.js";
@@ -14,6 +16,8 @@ const app = express();
 
 app.set("trust proxy", 1);
 
+// Relax CSP only for the Swagger UI route so its inline scripts load correctly
+app.use("/api/docs", helmet({ contentSecurityPolicy: false }));
 app.use(helmet());
 
 app.use(
@@ -33,6 +37,22 @@ app.use(
     stream: { write: (msg) => logger.info(msg.trim()) },
   })
 );
+
+// Swagger docs — available in all environments
+app.use(
+  "/api/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: "Etech API Docs",
+    swaggerOptions: { persistAuthorization: true },
+  })
+);
+
+// Serve raw OpenAPI JSON for tooling / Postman imports
+app.get("/api/docs.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
 
 app.use("/api/health", healthRouter);
 app.use("/api/generate", generateRouter);

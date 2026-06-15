@@ -43,6 +43,114 @@ const parseJsonWithRetry = async (systemPrompt, userPrompt, format) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/generate:
+ *   post:
+ *     tags: [Generate]
+ *     summary: Generate AI educational content
+ *     description: |
+ *       Generates educational content using Groq (llama-3.3-70b-versatile).
+ *
+ *       **Format behaviour:**
+ *       - `text` — Returns a markdown-formatted explanation.
+ *       - `audio` — Returns a plain spoken script (no markdown). Frontend plays it via `window.speechSynthesis`.
+ *       - `image` — Groq generates a descriptive prompt, which is passed to Pollinations.ai. Returns an image URL.
+ *       - `interactive` — Returns a JSON array of 5 multiple-choice quiz questions.
+ *       - `video` — Returns a JSON array of 5 storyboard scenes.
+ *
+ *       **Rate limit:** 20 requests per IP per 15 minutes.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/GenerateRequest'
+ *           examples:
+ *             text:
+ *               summary: Generate a text explanation
+ *               value:
+ *                 format: text
+ *                 prompt: Explain quantum computing
+ *                 topic: Quantum Physics
+ *                 level: Beginner
+ *             audio:
+ *               summary: Generate an audio script
+ *               value:
+ *                 format: audio
+ *                 prompt: Explain how photosynthesis works
+ *                 topic: Biology
+ *                 level: Intermediate
+ *             image:
+ *               summary: Generate an educational image
+ *               value:
+ *                 format: image
+ *                 prompt: Show how DNA replication works
+ *                 topic: Genetics
+ *                 level: Advanced
+ *             interactive:
+ *               summary: Generate a quiz
+ *               value:
+ *                 format: interactive
+ *                 prompt: Test knowledge of the solar system
+ *                 topic: Astronomy
+ *                 level: Beginner
+ *             video:
+ *               summary: Generate a video storyboard
+ *               value:
+ *                 format: video
+ *                 prompt: Explain the water cycle
+ *                 topic: Earth Science
+ *                 level: Intermediate
+ *     responses:
+ *       200:
+ *         description: Content generated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/GenerateResponseText'
+ *                 - $ref: '#/components/schemas/GenerateResponseInteractive'
+ *                 - $ref: '#/components/schemas/GenerateResponseVideo'
+ *       400:
+ *         description: Request body failed validation.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       413:
+ *         description: Request body exceeds the 10kb size limit.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/InternalError'
+ *       429:
+ *         description: Rate limit exceeded.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RateLimitError'
+ *       500:
+ *         description: AI generation failed or server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/GenerationError'
+ *                 - $ref: '#/components/schemas/InternalError'
+ *       502:
+ *         description: AI service returned an error (auth, model not found, or internal).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/InternalError'
+ *       503:
+ *         description: AI service is rate-limited or unavailable.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/InternalError'
+ */
 router.post("/", generateLimiter, validateGenerate, async (req, res, next) => {
   const { format, prompt, topic, level } = req.body;
 
