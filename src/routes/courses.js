@@ -4,11 +4,16 @@ import mongoose from "mongoose";
 import { protect } from "../middleware/auth.js";
 import { Course } from "../models/Course.js";
 import { generate } from "../services/groqService.js";
-import { buildCourseIndexPrompts } from "../services/coursePrompts.js";
+import { buildCourseIndexPrompts, buildTopicDiscoveryPrompts } from "../services/coursePrompts.js";
 import { generateLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
 router.use(protect);
+
+const discoverSchema = z.object({
+  subject: z.string().min(2).max(100).trim(),
+  level: z.enum(["Beginner", "Intermediate", "Advanced"]),
+});
 
 const generateSchema = z.object({
   subject: z.string().min(2).max(100).trim(),
@@ -18,10 +23,117 @@ const generateSchema = z.object({
 
 /**
  * @openapi
+ * /api/courses/discover:
+ *   post:
+ *     tags: [Courses]
+ *     summary: Discover available courses for a subject and level
+ *     description: |
+ *       Step 1 of the course creation flow.
+ *       The user types a subject and selects a difficulty level.
+ *       The AI returns 8-12 recommended courses to choose from.
+ *       The user browses the list, picks or edits one, then calls POST /api/courses/generate.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [subject, level]
+ *             properties:
+ *               subject: { type: string, example: "Computer Science" }
+ *               level: { type: string, enum: [Beginner, Intermediate, Advanced], example: "Beginner" }
+ *           examples:
+ *             cs_beginner:
+ *               summary: Computer Science — Beginner
+ *               value: { subject: "Computer Science", level: "Beginner" }
+ *             math_intermediate:
+ *               summary: Mathematics — Intermediate
+ *               value: { subject: "Mathematics", level: "Intermediate" }
+ *     responses:
+ *       200:
+ *         description: List of 8-12 recommended courses. User picks one and calls POST /api/courses/generate.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     subject: { type: string, example: "Computer Science" }
+ *                     level: { type: string, example: "Beginner" }
+ *                     courses:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           title: { type: string, example: "Introduction to Data Structures & Algorithms" }
+ *                           description: { type: string }
+ *                           estimatedHours: { type: number, example: 12 }
+ *                           prerequisites: { type: array, items: { type: string } }
+ *                           tags: { type: array, items: { type: string }, example: ["foundational", "popular"] }
+ *       400:
+ *         description: Validation error.
+ *       500:
+ *         description: AI generation failed.
+ */
+router.post("/discover", generateLimiter, async (req, res, next) => {
+  try {
+    const result = discoverSchema.safeParse(req.body);
+    if (!result.success) {
+      const fields = result.error.errors.map((e) => ({ field: e.path.join("."), message: e.message }));
+      return res.status(400).json({
+        success: false,
+        error: { code: "VALIDATION_ERROR", message: "Validation failed.", fields },
+      });
+    }
+
+    const { subject, level } = result.data;
+    const { systemPrompt, userPrompt } = buildTopicDiscoveryPrompts(subject, level);
+
+    let courses;
+    try {
+      const raw = await generate(systemPrompt, userPrompt);
+      courses = JSON.parse(raw);
+    } catch {
+      // Retry once on parse failure
+      const raw = await generate(systemPrompt, userPrompt);
+      courses = JSON.parse(raw);
+    }
+
+    if (!Array.isArray(courses)) {
+      return res.status(500).json({
+        success: false,
+        error: { code: "GENERATION_ERROR", message: "Failed to generate course list. Please try again." },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        subject,
+        level,
+        courses,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
  * /api/courses/generate:
  *   post:
  *     tags: [Courses]
- *     summary: Generate a new course curriculum from a topic
+ *     summary: Generate a full course curriculum (Step 2 — after /discover)
+ *     description: |
+ *       Step 2 of the course creation flow.
+ *       The user picks a topic from the list returned by POST /api/courses/discover
+ *       (or types their own), then calls this endpoint to generate the full curriculum.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
