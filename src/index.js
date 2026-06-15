@@ -7,17 +7,23 @@ import swaggerUi from "swagger-ui-express";
 import { config } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { swaggerSpec } from "./config/swagger.js";
+import { connectDB } from "./config/db.js";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+
 import healthRouter from "./routes/health.js";
 import generateRouter from "./routes/generate.js";
+import authRouter from "./routes/auth.js";
+import coursesRouter from "./routes/courses.js";
+import sectionsRouter from "./routes/sections.js";
+import progressRouter from "./routes/progress.js";
+import subjectsRouter from "./routes/subjects.js";
 
 const app = express();
 
 app.set("trust proxy", 1);
 
 // Relax CSP only on the /api/docs route so Swagger UI assets load correctly.
-// All other routes keep the strict helmet defaults.
 app.use(
   "/api/docs",
   helmet({
@@ -35,7 +41,7 @@ app.use(
 );
 app.use(helmet());
 
-// CORS — open to all origins.
+// CORS — open to all origins
 app.use(cors());
 
 app.use(globalLimiter);
@@ -59,51 +65,48 @@ const swaggerUiOptions = {
     .swagger-ui .btn.execute:hover { background-color: #3730a3; }
     .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #4f46e5; }
     .swagger-ui .opblock.opblock-get .opblock-summary-method { background: #059669; }
+    .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: #dc2626; }
+    .swagger-ui .opblock.opblock-patch .opblock-summary-method { background: #d97706; }
   `,
   swaggerOptions: {
-    // Persist "Try it out" state across page refreshes
     persistAuthorization: true,
-    // Expand the first tag by default
     docExpansion: "list",
-    // Show request duration in responses
     displayRequestDuration: true,
-    // Show operation IDs
     displayOperationId: false,
-    // Deep link to specific operations via URL hash
     deepLinking: true,
-    // Show all models expanded in the schemas section
     defaultModelsExpandDepth: 2,
     defaultModelExpandDepth: 2,
-    // Syntax-highlight responses
     syntaxHighlight: { activate: true, theme: "monokai" },
-    // Filter operations by tag/method
     filter: true,
-    // Try-it-out enabled by default
     tryItOutEnabled: true,
   },
 };
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
-// Raw OpenAPI JSON — useful for Postman, Insomnia, code generators, etc.
 app.get("/api/docs.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
-  res.setHeader("Access-Control-Allow-Origin", "*"); // allow Postman / tooling
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.send(swaggerSpec);
 });
 
-// ── API routes ───────────────────────────────────────────────────────────────
+// ── API Routes ───────────────────────────────────────────────────────────────
 
 app.use("/api/health", healthRouter);
 app.use("/api/generate", generateRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/courses", coursesRouter);
+app.use("/api/courses/:courseId/sections", sectionsRouter);
+app.use("/api/courses/:courseId", progressRouter);
+app.use("/api/subjects", subjectsRouter);
 
-// 404 — unknown route
+// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: {
       code: "NOT_FOUND",
-      message: `Route '${req.method} ${req.path}' does not exist. Available endpoints: GET /api/health, POST /api/generate. Docs: GET /api/docs.`,
+      message: `Route '${req.method} ${req.path}' does not exist. Visit GET /api/docs for full API documentation.`,
     },
   });
 });
@@ -112,8 +115,10 @@ app.use(errorHandler);
 
 // ── Start ────────────────────────────────────────────────────────────────────
 
-app.listen(config.port, () => {
-  logger.info(`Etech backend running on port ${config.port} [${config.nodeEnv}]`);
-  logger.info(`Swagger UI → http://localhost:${config.port}/api/docs`);
-  logger.info(`OpenAPI JSON → http://localhost:${config.port}/api/docs.json`);
+connectDB().then(() => {
+  app.listen(config.port, () => {
+    logger.info(`Etech LMS backend running on port ${config.port} [${config.nodeEnv}]`);
+    logger.info(`Swagger UI  → http://localhost:${config.port}/api/docs`);
+    logger.info(`OpenAPI JSON → http://localhost:${config.port}/api/docs.json`);
+  });
 });
