@@ -18,7 +18,7 @@ export const protect = async (req, res, next) => {
 
   try {
     const decoded = verifyAccessToken(token);
-    const user = await User.findById(decoded.sub).select("-refreshToken");
+    const user = await User.findById(decoded.sub).select("+passwordChangedAt");
 
     if (!user) {
       return res.status(401).json({
@@ -26,6 +26,17 @@ export const protect = async (req, res, next) => {
         error: {
           code: "UNAUTHORIZED",
           message: "The user belonging to this token no longer exists.",
+        },
+      });
+    }
+
+    // Reject tokens issued before the last password change
+    if (user.passwordChangedAfter(decoded.iat)) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: "TOKEN_INVALIDATED",
+          message: "Your password was recently changed. Please log in again.",
         },
       });
     }

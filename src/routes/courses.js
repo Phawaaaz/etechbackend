@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import mongoose from "mongoose";
 import { protect } from "../middleware/auth.js";
 import { Course } from "../models/Course.js";
 import { generate } from "../services/groqService.js";
@@ -139,6 +140,9 @@ router.get("/", async (req, res, next) => {
  */
 router.get("/:id", async (req, res, next) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Course not found or you do not have access to it." } });
+    }
     const course = await Course.findOne({ _id: req.params.id, userId: req.user._id });
     if (!course) {
       return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Course not found or you do not have access to it." } });
@@ -170,6 +174,9 @@ router.get("/:id", async (req, res, next) => {
  */
 router.delete("/:id", async (req, res, next) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Course not found or you do not have access to it." } });
+    }
     const course = await Course.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!course) {
       return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Course not found or you do not have access to it." } });

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { protect } from "../middleware/auth.js";
 import { Course } from "../models/Course.js";
 import { Section } from "../models/Section.js";
@@ -110,6 +111,14 @@ router.post("/generate/:order", generateLimiter, async (req, res, next) => {
  */
 router.get("/", async (req, res, next) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.courseId)) {
+      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Course not found or you do not have access to it." } });
+    }
+    // Verify course ownership before listing sections
+    const course = await Course.findOne({ _id: req.params.courseId, userId: req.user._id }).select("_id");
+    if (!course) {
+      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Course not found or you do not have access to it." } });
+    }
     const sections = await Section.find({ courseId: req.params.courseId, userId: req.user._id })
       .sort({ order: 1 })
       .select("order title createdAt");
@@ -144,6 +153,9 @@ router.get("/", async (req, res, next) => {
  */
 router.get("/:sectionId", async (req, res, next) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.sectionId) || !mongoose.isValidObjectId(req.params.courseId)) {
+      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Section not found or you do not have access to it." } });
+    }
     const section = await Section.findOne({
       _id: req.params.sectionId,
       courseId: req.params.courseId,

@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
+import mongoose from "mongoose";
 import { protect } from "../middleware/auth.js";
+import { sensitiveActionLimiter } from "../middleware/rateLimiter.js";
 import { Progress } from "../models/Progress.js";
 import { Section } from "../models/Section.js";
 
@@ -138,12 +140,21 @@ router.patch("/:sectionId/progress", async (req, res, next) => {
  *       404:
  *         description: Section not found.
  */
-router.post("/:sectionId/quiz", async (req, res, next) => {
+const answersSchema = z.array(z.string().max(500)).min(1).max(10);
+
+router.post("/:sectionId/quiz", sensitiveActionLimiter, async (req, res, next) => {
   try {
-    const { answers } = req.body;
-    if (!Array.isArray(answers) || answers.length === 0) {
-      return res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: "Provide an 'answers' array with one answer string per question." } });
+    // Validate sectionId is a valid ObjectId
+    if (!mongoose.isValidObjectId(req.params.sectionId)) {
+      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Section not found." } });
     }
+
+    // Validate answers array — each item must be a string, max 10 items
+    const parsed = answersSchema.safeParse(req.body.answers);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: "Provide an 'answers' array of strings (max 10 items, each max 500 chars)." } });
+    }
+    const answers = parsed.data;
 
     const section = await Section.findOne({ _id: req.params.sectionId, courseId: req.params.courseId, userId: req.user._id });
     if (!section) {
@@ -157,9 +168,10 @@ router.post("/:sectionId/quiz", async (req, res, next) => {
       return {
         question: q.question,
         yourAnswer: userAnswer,
-        correctAnswer: q.answer,
         correct,
         explanation: q.explanation,
+        // Only reveal the correct answer for questions the user got wrong
+        ...(correct ? {} : { correctAnswer: q.answer }),
       };
     });
 

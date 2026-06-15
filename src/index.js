@@ -22,7 +22,8 @@ import usersRouter from "./routes/users.js";
 
 const app = express();
 
-app.set("trust proxy", 1);
+// Only trust the first proxy hop in production (prevents IP spoofing of rate limiter in dev)
+if (config.nodeEnv === "production") app.set("trust proxy", 1);
 
 // Relax CSP only on the /api/docs route so Swagger UI assets load correctly.
 app.use(
@@ -87,7 +88,6 @@ app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOpti
 
 app.get("/api/docs.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
-  res.setHeader("Access-Control-Allow-Origin", "*");
   res.send(swaggerSpec);
 });
 

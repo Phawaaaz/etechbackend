@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
+import mongoose from "mongoose";
 import { User } from "../models/User.js";
 import { Course } from "../models/Course.js";
 import { Section } from "../models/Section.js";
 import { Progress } from "../models/Progress.js";
 import { protect } from "../middleware/auth.js";
+import { sensitiveActionLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
 router.use(protect);
@@ -178,7 +180,7 @@ router.patch("/me", async (req, res, next) => {
  *       401:
  *         description: Current password is incorrect.
  */
-router.patch("/me/password", async (req, res, next) => {
+router.patch("/me/password", sensitiveActionLimiter, async (req, res, next) => {
   try {
     const result = changePasswordSchema.safeParse(req.body);
     if (!result.success) {
@@ -196,9 +198,10 @@ router.patch("/me/password", async (req, res, next) => {
       });
     }
 
-    // Setting password triggers the pre-save hash hook; also invalidate all refresh tokens
+    // Triggers pre-save hash hook which also sets passwordChangedAt,
+    // invalidating all existing access tokens issued before this moment.
     user.password = newPassword;
-    user.refreshToken = null;
+    user.refreshTokenHash = null;
     await user.save();
 
     res.json({
@@ -240,7 +243,7 @@ router.patch("/me/password", async (req, res, next) => {
  *       401:
  *         description: Password incorrect.
  */
-router.delete("/me", async (req, res, next) => {
+router.delete("/me", sensitiveActionLimiter, async (req, res, next) => {
   try {
     const result = deleteAccountSchema.safeParse(req.body);
     if (!result.success) {
