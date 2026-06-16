@@ -198,6 +198,47 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // ── Mongoose errors ─────────────────────────────────────────────────────
+
+  // Invalid ObjectId in URL params — return 404 not 500
+  if (err.name === "CastError") {
+    return res.status(404).json({
+      success: false,
+      error: {
+        code: "NOT_FOUND",
+        message: "Resource not found. The ID provided is not valid.",
+      },
+    });
+  }
+
+  // Duplicate unique field (e.g. email already registered)
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue || {})[0] || "field";
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: "DUPLICATE_KEY",
+        message: `A record with this ${field} already exists.`,
+      },
+    });
+  }
+
+  // Mongoose schema validation error
+  if (err.name === "ValidationError") {
+    const fields = Object.values(err.errors).map((e) => ({
+      field: e.path,
+      message: e.message,
+    }));
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Validation failed.",
+        fields,
+      },
+    });
+  }
+
   // ── Groq SDK / upstream AI errors ──────────────────────────────────────
 
   if (err.status && err.error !== undefined) {
@@ -253,11 +294,21 @@ export const errorHandler = (err, req, res, next) => {
 
   // ── Generic / unknown fallback ──────────────────────────────────────────
 
+  const isDev = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+
   res.status(500).json({
     success: false,
     error: {
       code: "INTERNAL_ERROR",
-      message: `An unexpected server error occurred. Please try again. ${SUPPORT_HINT}`,
+      message: isDev 
+        ? `Internal Server Error: ${err.message}` 
+        : `An unexpected server error occurred. Please try again. ${SUPPORT_HINT}`,
+      ...(isDev ? {
+        errorType: err.name || "Error",
+        stack: err.stack ? err.stack.split("\n").map((line) => line.trim()) : [],
+        path: req.path,
+        method: req.method,
+      } : {}),
     },
   });
 };

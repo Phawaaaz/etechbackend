@@ -1,9 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// ── Environment variable definitions ─────────────────────────────────────────
-// Each entry defines whether the variable is required, its default value,
-// a validator function, and a human-readable description + fix hint.
+
 
 const ENV_SPEC = [
   {
@@ -14,19 +12,37 @@ const ENV_SPEC = [
     validate: (v) => v.startsWith("gsk_") || "Value does not look like a valid Groq API key (expected prefix: gsk_).",
   },
   {
+    key: "MONGODB_URI",
+    required: true,
+    description: "MongoDB connection string used to connect to the database.",
+    hint: "Create a free cluster at https://cloud.mongodb.com → Connect → Drivers → copy the connection string. Add it as: MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/etech",
+    validate: (v) =>
+      (v.startsWith("mongodb://") || v.startsWith("mongodb+srv://")) ||
+      "Value must start with 'mongodb://' or 'mongodb+srv://'.",
+  },
+  {
+    key: "JWT_SECRET",
+    required: true,
+    description: "Secret key used to sign access tokens.",
+    hint: "Generate a strong random string: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"",
+    validate: (v) => v.length >= 32 || "JWT_SECRET must be at least 32 characters long.",
+  },
+  {
+    key: "JWT_REFRESH_SECRET",
+    required: true,
+    description: "Secret key used to sign refresh tokens. Must be different from JWT_SECRET.",
+    hint: "Generate a different strong random string: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"",
+    validate: (v) => v.length >= 32 || "JWT_REFRESH_SECRET must be at least 32 characters long.",
+  },
+  {
     key: "ALLOWED_ORIGIN",
     required: false,
     default: "*",
     description: "Optional: restrict CORS to a specific frontend origin. Defaults to open (*) if not set.",
-    hint: 'Set to your frontend URL, e.g. ALLOWED_ORIGIN=https://yourdomain.com to restrict access in production.',
+    hint: "Set to your frontend URL, e.g. ALLOWED_ORIGIN=https://yourdomain.com to restrict access in production.",
     validate: (v) => {
       if (v === "*") return true;
-      try {
-        new URL(v);
-        return true;
-      } catch {
-        return "Value must be a valid URL (e.g. http://localhost:5173 or https://yourdomain.com) or omitted entirely.";
-      }
+      try { new URL(v); return true; } catch { return "Value must be a valid URL or omitted entirely."; }
     },
   },
   {
@@ -37,8 +53,7 @@ const ENV_SPEC = [
     hint: "Defaults to 5000 if not set. Must be a number between 1024 and 65535.",
     validate: (v) => {
       const n = Number(v);
-      return (Number.isInteger(n) && n >= 1024 && n <= 65535)
-        || "PORT must be an integer between 1024 and 65535.";
+      return (Number.isInteger(n) && n >= 1024 && n <= 65535) || "PORT must be an integer between 1024 and 65535.";
     },
   },
   {
@@ -47,9 +62,23 @@ const ENV_SPEC = [
     default: "development",
     description: "Runtime environment. Controls logging behaviour and other env-specific settings.",
     hint: 'Set to "production" in deployed environments and "development" locally.',
-    validate: (v) =>
-      ["development", "production", "test"].includes(v)
-        || 'NODE_ENV must be one of: development, production, test.',
+    validate: (v) => ["development", "production", "test"].includes(v) || 'NODE_ENV must be one of: development, production, test.',
+  },
+  {
+    key: "JWT_EXPIRES_IN",
+    required: false,
+    default: "15m",
+    description: "Access token expiry duration.",
+    hint: "Examples: 15m, 1h, 1d. Keep short for security.",
+    validate: () => true,
+  },
+  {
+    key: "JWT_REFRESH_EXPIRES_IN",
+    required: false,
+    default: "7d",
+    description: "Refresh token expiry duration.",
+    hint: "Examples: 7d, 30d.",
+    validate: () => true,
   },
 ];
 
