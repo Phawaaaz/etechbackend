@@ -8,6 +8,7 @@ import { config } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { swaggerSpec } from "./config/swagger.js";
 import { connectDB } from "./config/db.js";
+import { startKeepAlive } from "./jobs/keepAlive.js";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -122,5 +123,6 @@ connectDB().then(() => {
     logger.info(`Etech LMS backend running on port ${config.port} [${config.nodeEnv}]`);
     logger.info(`Swagger UI  → http://localhost:${config.port}/api/docs`);
     logger.info(`OpenAPI JSON → http://localhost:${config.port}/api/docs.json`);
+    startKeepAlive();
   });
 });
