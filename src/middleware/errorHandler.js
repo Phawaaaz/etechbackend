@@ -198,6 +198,25 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // ── MongoDB connection / network errors ─────────────────────────────────────
+
+  if (
+    err.name === "MongoNetworkError" ||
+    err.name === "MongoServerSelectionError" ||
+    err.name === "MongoTimeoutError" ||
+    err.message?.includes("buffering timed out") ||
+    err.message?.includes("getaddrinfo ENOTFOUND") ||
+    err.message?.includes("connect ECONNREFUSED")
+  ) {
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: "DATABASE_UNAVAILABLE",
+        message: "The database is temporarily unreachable. Please try again in a few seconds.",
+      },
+    });
+  }
+
   // ── Mongoose errors ─────────────────────────────────────────────────────
 
   // Invalid ObjectId in URL params — return 404 not 500
