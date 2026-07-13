@@ -13,8 +13,8 @@ import {
 } from "./coursePrompts.js";
 
 const parseJson = async (systemPrompt, userPrompt, label) => {
-  const attempt = async () => {
-    const raw = await generate(systemPrompt, userPrompt);
+  const attempt = async (skipCacheRead) => {
+    const raw = await generate(systemPrompt, userPrompt, { skipCacheRead });
     try {
       return JSON.parse(raw);
     } catch {
@@ -22,10 +22,11 @@ const parseJson = async (systemPrompt, userPrompt, label) => {
     }
   };
   try {
-    return await attempt();
+    return await attempt(false);
   } catch {
     logger.warn(`Retrying JSON generation for: ${label}`);
-    return await attempt();
+    // Bypass the cache on retry — the first failure may have been a cached bad response
+    return await attempt(true);
   }
 };
 

@@ -59,7 +59,7 @@ const parseJsonWithRetry = async (systemPrompt, userPrompt, format) => {
  *       - `interactive` — Returns a JSON array of 5 multiple-choice quiz questions.
  *       - `video` — Returns a JSON array of 5 storyboard scenes.
  *
- *       **Rate limit:** 20 requests per IP per 15 minutes.
+ *       **Rate limit:** 60 requests per IP per 15 minutes.
  *     requestBody:
  *       required: true
  *       content:

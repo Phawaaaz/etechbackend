@@ -30,8 +30,8 @@ Generate educational content in five formats using **Groq** (\`llama-3.3-70b-ver
 | \`video\` | 5-scene storyboard (JSON array) | Frontend video builder |
 
 ### Rate limits
-- \`POST /api/generate\` → **20 requests / IP / 15 min**
-- All other routes → **100 requests / IP / 15 min**
+- \`POST /api/generate\` → **60 requests / IP / 15 min** (repeated prompts served from cache)
+- All other routes → **500 requests / IP / 15 min**
 
 ### Response envelope
 Every response follows this shape:
@@ -287,7 +287,7 @@ Every response follows this shape:
                 message: {
                   type: "string",
                   example:
-                    "You have exceeded the allowed 20 requests per 15 minutes from this IP address. Please wait 843 seconds before trying again.",
+                    "You have exceeded the allowed 60 requests per 15 minutes from this IP address. Please wait 843 seconds before trying again.",
                 },
                 retryAfterSeconds: {
                   type: "integer",
