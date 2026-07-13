@@ -33,7 +33,7 @@ export const globalLimiter = rateLimit({
 // Sensitive actions: password change, account deletion, quiz submission — 5 req / 15 min
 export const sensitiveActionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   handler: makeHandler(5, 15),
