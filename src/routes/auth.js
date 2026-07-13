@@ -7,9 +7,11 @@ import rateLimit from "express-rate-limit";
 
 const router = Router();
 
+// Only failed attempts count toward the limit — successful logins are free
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 20,
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) =>
@@ -54,7 +56,7 @@ const loginSchema = z.object({
  *       400:
  *         description: Validation error.
  */
-router.post("/register", authLimiter, async (req, res, next) => {
+router.post("/register", async (req, res, next) => {
   try {
     const result = registerSchema.safeParse(req.body);
     if (!result.success) {

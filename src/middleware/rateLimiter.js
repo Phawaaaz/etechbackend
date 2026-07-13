@@ -36,5 +36,5 @@ export const sensitiveActionLimiter = rateLimit({
   max: 15,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: makeHandler(5, 15),
+  handler: makeHandler(15, 15),
 });
