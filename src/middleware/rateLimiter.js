@@ -21,13 +21,14 @@ export const generateLimiter = rateLimit({
   handler: makeHandler(20, 15),
 });
 
-// All routes — 100 req / 15 min
+// All routes — 500 req / 15 min. Generous because many users can share one
+// public IP (campus Wi-Fi / NAT) and this counts every API call they make.
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: makeHandler(100, 15),
+  handler: makeHandler(500, 15),
 });
 
 // Sensitive actions: password change, account deletion, quiz submission — 5 req / 15 min
