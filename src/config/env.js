@@ -9,7 +9,7 @@ const ENV_SPEC = [
     required: true,
     description: "Anthropic API key used to authenticate with the AI service.",
     hint: "Get your key at https://console.anthropic.com → API Keys → Create Key. Add it to your .env file as: ANTHROPIC_API_KEY=sk-ant-...",
-    validate: (v) => v.startsWith("sk-ant-") || "Value does not look like a valid Anthropic API key (expected prefix: sk-ant-).",
+    validate: (v) => v.startsWith("sk-") || "Value does not look like a valid Anthropic API key (expected prefix: sk-).",
   },
   {
     key: "MONGODB_URI",
