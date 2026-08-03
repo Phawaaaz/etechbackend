@@ -13,7 +13,7 @@ const makeHandler = (limit, windowMinutes) => (req, res) => {
 };
 
 // AI generation endpoints — 60 req / 15 min. Raised from 20 because repeated
-// prompts are now served from the AI response cache without spending Groq quota.
+// prompts are now served from the AI response cache without spending Anthropic quota.
 export const generateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 60,

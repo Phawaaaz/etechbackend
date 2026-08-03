@@ -1,15 +1,13 @@
 import crypto from "node:crypto";
-import Groq from "groq-sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import { config } from "../config/env.js";
 import { cacheGet, cacheSet } from "./aiCache.js";
 import { logger } from "../config/logger.js";
 
-const client = new Groq({ apiKey: config.groqApiKey });
+const client = new Anthropic({ apiKey: config.anthropicApiKey });
 
-const MODEL = "llama-3.3-70b-versatile";
+const MODEL = "claude-3-5-sonnet-20241022";
 
-// skipCacheRead: used by JSON-retry paths so a cached malformed response
-// can't be returned again; the fresh result still overwrites the cache.
 export const generate = async (systemPrompt, userPrompt, { skipCacheRead = false } = {}) => {
   const key = crypto
     .createHash("sha256")
@@ -24,16 +22,14 @@ export const generate = async (systemPrompt, userPrompt, { skipCacheRead = false
     }
   }
 
-  const response = await client.chat.completions.create({
+  const response = await client.messages.create({
     model: MODEL,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
     temperature: 0.7,
     max_tokens: 2048,
   });
-  const content = response.choices[0].message.content;
+  const content = response.content[0].text;
   cacheSet(key, content);
   return content;
 };

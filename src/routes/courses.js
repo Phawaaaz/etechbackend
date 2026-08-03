@@ -3,7 +3,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { protect } from "../middleware/auth.js";
 import { Course } from "../models/Course.js";
-import { generate } from "../services/groqService.js";
+import { generate } from "../services/anthropicService.js";
 import { buildCourseIndexPrompts, buildTopicDiscoveryPrompts } from "../services/coursePrompts.js";
 import { generateLimiter } from "../middleware/rateLimiter.js";
 

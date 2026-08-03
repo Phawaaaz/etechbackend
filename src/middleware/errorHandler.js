@@ -3,15 +3,15 @@ import { logger } from "../config/logger.js";
 const SUPPORT_HINT = "If the problem persists, please contact support.";
 
 /**
- * Classify and respond to Groq / upstream AI API errors.
- * Groq SDK throws objects with { status, error: { message, type, code } }.
+ * Classify and respond to Anthropic / upstream AI API errors.
+ * Anthropic SDK throws objects with { status, error: { message, type, code } }.
  */
-const handleGroqError = (err, res) => {
+const handleAnthropicError = (err, res) => {
   const status = err.status;
-  const groqCode = err.error?.code;
-  const groqType = err.error?.type;
+  const anthropicCode = err.error?.code;
+  const anthropicType = err.error?.type;
 
-  if (status === 400 || groqType === "invalid_request_error") {
+  if (status === 400 || anthropicType === "invalid_request_error") {
     return res.status(422).json({
       success: false,
       error: {
@@ -22,7 +22,7 @@ const handleGroqError = (err, res) => {
     });
   }
 
-  if (status === 401 || groqCode === "invalid_api_key") {
+  if (status === 401 || anthropicCode === "invalid_api_key") {
     return res.status(502).json({
       success: false,
       error: {
@@ -77,7 +77,7 @@ const handleGroqError = (err, res) => {
     });
   }
 
-  if (status === 429 || groqCode === "rate_limit_exceeded") {
+  if (status === 429 || anthropicCode === "rate_limit_exceeded") {
     return res.status(503).json({
       success: false,
       error: {
@@ -123,7 +123,7 @@ const handleGroqError = (err, res) => {
     });
   }
 
-  // Unknown Groq error
+  // Unknown Anthropic error
   return res.status(502).json({
     success: false,
     error: {
@@ -258,13 +258,13 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // ── Groq SDK / upstream AI errors ──────────────────────────────────────
+  // ── Anthropic SDK / upstream AI errors ──────────────────────────────────
 
   if (err.status && err.error !== undefined) {
-    return handleGroqError(err, res);
+    return handleAnthropicError(err, res);
   }
 
-  // Network / connection errors reaching Groq
+  // Network / connection errors reaching Anthropic
   if (err.code === "ECONNREFUSED" || err.code === "ENOTFOUND") {
     return res.status(502).json({
       success: false,

@@ -18,7 +18,7 @@ const options = {
       description: `
 ## Etech — AI Educational Content Generation API
 
-Generate educational content in five formats using **Groq** (\`llama-3.3-70b-versatile\`) and **Pollinations.ai**.
+Generate educational content in five formats using **Anthropic** (\`claude-3-5-sonnet-20241022\`) and **Pollinations.ai**.
 
 ### Formats
 | Format | What you get | Rendered by |

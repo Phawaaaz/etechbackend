@@ -5,11 +5,11 @@ dotenv.config();
 
 const ENV_SPEC = [
   {
-    key: "GROQ_API_KEY",
+    key: "ANTHROPIC_API_KEY",
     required: true,
-    description: "Groq API key used to authenticate with the AI service.",
-    hint: "Get your key at https://console.groq.com → API Keys → Create API Key. Add it to your .env file as: GROQ_API_KEY=gsk_...",
-    validate: (v) => v.startsWith("gsk_") || "Value does not look like a valid Groq API key (expected prefix: gsk_).",
+    description: "Anthropic API key used to authenticate with the AI service.",
+    hint: "Get your key at https://console.anthropic.com → API Keys → Create Key. Add it to your .env file as: ANTHROPIC_API_KEY=sk-ant-...",
+    validate: (v) => v.startsWith("sk-ant-") || "Value does not look like a valid Anthropic API key (expected prefix: sk-ant-).",
   },
   {
     key: "MONGODB_URI",
@@ -121,6 +121,6 @@ if (hasErrors) {
 export const config = {
   port: Number(process.env.PORT) || 5000,
   nodeEnv: process.env.NODE_ENV || "development",
-  groqApiKey: process.env.GROQ_API_KEY,
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   allowedOrigin: process.env.ALLOWED_ORIGIN,
 };

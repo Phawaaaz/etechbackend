@@ -1,6 +1,6 @@
 // In-memory TTL + LRU cache for AI responses. Identical prompts return the
-// stored answer instead of spending another Groq API call, which is what lets
-// the /generate rate limit sit higher than the raw Groq quota would allow.
+// stored answer instead of spending another Anthropic API call, which is what lets
+// the /generate rate limit sit higher than the raw Anthropic quota would allow.
 const MAX_ENTRIES = 500;
 const TTL_MS = 24 * 60 * 60 * 1000; // course content for identical inputs is reusable for a day
 
