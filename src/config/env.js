@@ -8,8 +8,26 @@ const ENV_SPEC = [
     key: "ANTHROPIC_API_KEY",
     required: true,
     description: "Anthropic API key used to authenticate with the AI service.",
-    hint: "Get your key at https://console.anthropic.com → API Keys → Create Key. Add it to your .env file as: ANTHROPIC_API_KEY=sk-ant-...",
+    hint: "Get your key at https://console.anthropic.com → API Keys → Create Key. Add it to your .env file as: ANTHROPIC_API_KEY=sk-...",
     validate: (v) => v.startsWith("sk-") || "Value does not look like a valid Anthropic API key (expected prefix: sk-).",
+  },
+  {
+    key: "ANTHROPIC_BASE_URL",
+    required: false,
+    default: "https://api.anthropic.com",
+    description: "Optional custom base URL for the Anthropic API (e.g. for proxy routers like agentrouter.org).",
+    hint: "Defaults to https://api.anthropic.com if not set.",
+    validate: (v) => {
+      try { new URL(v); return true; } catch { return "Value must be a valid URL."; }
+    },
+  },
+  {
+    key: "ANTHROPIC_MODEL",
+    required: false,
+    default: "claude-3-5-sonnet-20241022",
+    description: "The Anthropic model to use for generation.",
+    hint: "Defaults to claude-3-5-sonnet-20241022 if not set.",
+    validate: (v) => v.length > 0 || "Model name cannot be empty.",
   },
   {
     key: "MONGODB_URI",
@@ -122,5 +140,7 @@ export const config = {
   port: Number(process.env.PORT) || 5000,
   nodeEnv: process.env.NODE_ENV || "development",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+  anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com",
+  anthropicModel: process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022",
   allowedOrigin: process.env.ALLOWED_ORIGIN,
 };

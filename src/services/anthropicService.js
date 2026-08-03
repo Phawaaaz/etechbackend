@@ -4,9 +4,12 @@ import { config } from "../config/env.js";
 import { cacheGet, cacheSet } from "./aiCache.js";
 import { logger } from "../config/logger.js";
 
-const client = new Anthropic({ apiKey: config.anthropicApiKey });
+const client = new Anthropic({
+  apiKey: config.anthropicApiKey,
+  baseURL: config.anthropicBaseUrl,
+});
 
-const MODEL = "claude-3-5-sonnet-20241022";
+const MODEL = config.anthropicModel;
 
 export const generate = async (systemPrompt, userPrompt, { skipCacheRead = false } = {}) => {
   const key = crypto
