@@ -9,6 +9,7 @@ const client = new Anthropic({
   baseURL: config.anthropicBaseUrl,
   defaultHeaders: {
     "user-agent": config.anthropicUserAgent,
+    "Authorization": `Bearer ${config.anthropicApiKey}`,
   },
 });
 
