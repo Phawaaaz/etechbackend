@@ -7,6 +7,9 @@ import { logger } from "../config/logger.js";
 const client = new Anthropic({
   apiKey: config.anthropicApiKey,
   baseURL: config.anthropicBaseUrl,
+  defaultHeaders: {
+    "user-agent": config.anthropicUserAgent,
+  },
 });
 
 const MODEL = config.anthropicModel;

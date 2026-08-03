@@ -30,6 +30,14 @@ const ENV_SPEC = [
     validate: (v) => v.length > 0 || "Model name cannot be empty.",
   },
   {
+    key: "ANTHROPIC_USER_AGENT",
+    required: false,
+    default: "claude-code/2.1.131 (cli)",
+    description: "The User-Agent header to send with Anthropic requests (e.g. to emulate official clients).",
+    hint: "Defaults to claude-code/2.1.131 (cli) if not set.",
+    validate: (v) => v.length > 0 || "User-Agent cannot be empty.",
+  },
+  {
     key: "MONGODB_URI",
     required: true,
     description: "MongoDB connection string used to connect to the database.",
@@ -142,5 +150,6 @@ export const config = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com",
   anthropicModel: process.env.ANTHROPIC_MODEL || "claude-opus-5",
+  anthropicUserAgent: process.env.ANTHROPIC_USER_AGENT || "claude-code/2.1.131 (cli)",
   allowedOrigin: process.env.ALLOWED_ORIGIN,
 };
