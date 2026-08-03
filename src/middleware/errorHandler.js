@@ -260,7 +260,7 @@ export const errorHandler = (err, req, res, next) => {
 
   // ── Anthropic SDK / upstream AI errors ──────────────────────────────────
 
-  if (err.status && err.error !== undefined) {
+  if (err.status !== undefined) {
     return handleAnthropicError(err, res);
   }
 
