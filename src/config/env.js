@@ -24,9 +24,9 @@ const ENV_SPEC = [
   {
     key: "ANTHROPIC_MODEL",
     required: false,
-    default: "claude-3-5-sonnet-20241022",
+    default: "claude-opus-5",
     description: "The Anthropic model to use for generation.",
-    hint: "Defaults to claude-3-5-sonnet-20241022 if not set.",
+    hint: "Defaults to claude-opus-5 if not set.",
     validate: (v) => v.length > 0 || "Model name cannot be empty.",
   },
   {
@@ -141,6 +141,6 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com",
-  anthropicModel: process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022",
+  anthropicModel: process.env.ANTHROPIC_MODEL || "claude-opus-5",
   allowedOrigin: process.env.ALLOWED_ORIGIN,
 };
