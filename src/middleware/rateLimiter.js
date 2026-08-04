@@ -12,29 +12,31 @@ const makeHandler = (limit, windowMinutes) => (req, res) => {
   });
 };
 
-// AI generation endpoints — 20 req / 15 min
+// AI generation endpoints — 60 req / 15 min. Raised from 20 because repeated
+// prompts are now served from the AI response cache without spending Anthropic quota.
 export const generateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: makeHandler(20, 15),
+  handler: makeHandler(60, 15),
 });
 
-// All routes — 100 req / 15 min
+// All routes — 500 req / 15 min. Generous because many users can share one
+// public IP (campus Wi-Fi / NAT) and this counts every API call they make.
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: makeHandler(100, 15),
+  handler: makeHandler(500, 15),
 });
 
 // Sensitive actions: password change, account deletion, quiz submission — 5 req / 15 min
 export const sensitiveActionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: makeHandler(5, 15),
+  handler: makeHandler(15, 15),
 });
