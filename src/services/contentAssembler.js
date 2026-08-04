@@ -1,4 +1,4 @@
-import { generate } from "./groqService.js";
+import { generate } from "./aiService.js";
 import { generateImageUrl } from "./imageService.js";
 import { logger } from "../config/logger.js";
 import {
@@ -29,7 +29,7 @@ const parseJson = async (systemPrompt, userPrompt, label) => {
   }
 };
 
-// Derive 3-4 concept titles from section title + topic using Groq
+// Derive 3-4 concept titles from section title + topic using the AI
 const deriveConceptTitles = async (topic, sectionTitle, level) => {
   const systemPrompt = `You are a curriculum designer. List 3-4 core concepts that should be taught in the section titled "${sectionTitle}" of a course on "${topic}" for a ${level} learner.
 Return a valid JSON array ONLY — no markdown. Schema: ["concept title string"]

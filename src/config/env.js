@@ -5,11 +5,30 @@ dotenv.config();
 
 const ENV_SPEC = [
   {
-    key: "GROQ_API_KEY",
+    key: "OPENAI_API_KEY",
     required: true,
-    description: "Groq API key used to authenticate with the AI service.",
-    hint: "Get your key at https://console.groq.com → API Keys → Create API Key. Add it to your .env file as: GROQ_API_KEY=gsk_...",
-    validate: (v) => v.startsWith("gsk_") || "Value does not look like a valid Groq API key (expected prefix: gsk_).",
+    description: "API key used to authenticate with the OpenAI-compatible AI service.",
+    hint: "Get your AgentRouter key at https://agentrouter.org/console/token (starts with 'ak-'). First-party OpenAI keys start with 'sk-'. Add it as: OPENAI_API_KEY=ak-...",
+    validate: (v) =>
+      v.startsWith("ak-") || v.startsWith("sk-") ||
+      "Value does not look like a valid API key (expected prefix: ak- for AgentRouter or sk- for OpenAI).",
+  },
+  {
+    key: "OPENAI_BASE_URL",
+    required: false,
+    description: "Optional: override the API base URL to use an OpenAI-compatible proxy instead of the first-party API.",
+    hint: "Leave unset to use the default OpenAI API. For AgentRouter set: OPENAI_BASE_URL=https://agentrouter.org/v1 (the /v1 suffix is required).",
+    validate: (v) => {
+      try { new URL(v); return true; } catch { return "Value must be a valid URL (e.g. https://agentrouter.org/v1)."; }
+    },
+  },
+  {
+    key: "OPENAI_MODEL",
+    required: false,
+    default: "gpt-5.6-sol",
+    description: "The model id to use for generation.",
+    hint: "Defaults to gpt-5.6-sol. Check which models your token can access with GET /v1/models.",
+    validate: () => true,
   },
   {
     key: "MONGODB_URI",
@@ -121,6 +140,8 @@ if (hasErrors) {
 export const config = {
   port: Number(process.env.PORT) || 5000,
   nodeEnv: process.env.NODE_ENV || "development",
-  groqApiKey: process.env.GROQ_API_KEY,
+  aiApiKey: process.env.OPENAI_API_KEY,
+  aiBaseUrl: process.env.OPENAI_BASE_URL,
+  aiModel: process.env.OPENAI_MODEL || "gpt-5.6-sol",
   allowedOrigin: process.env.ALLOWED_ORIGIN,
 };

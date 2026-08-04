@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { validateGenerate } from "../middleware/validate.js";
 import { generateLimiter } from "../middleware/rateLimiter.js";
 import { buildPrompts } from "../services/promptBuilder.js";
-import { generate } from "../services/groqService.js";
+import { generate } from "../services/aiService.js";
 import { generateImageUrl } from "../services/imageService.js";
 import { logger } from "../config/logger.js";
 
@@ -50,12 +50,12 @@ const parseJsonWithRetry = async (systemPrompt, userPrompt, format) => {
  *     tags: [Generate]
  *     summary: Generate AI educational content
  *     description: |
- *       Generates educational content using Groq (llama-3.3-70b-versatile).
+ *       Generates educational content using AI (gpt-5.6).
  *
  *       **Format behaviour:**
  *       - `text` — Returns a markdown-formatted explanation.
  *       - `audio` — Returns a plain spoken script (no markdown). Frontend plays it via `window.speechSynthesis`.
- *       - `image` — Groq generates a descriptive prompt, which is passed to Pollinations.ai. Returns an image URL.
+ *       - `image` — The AI generates a descriptive prompt, which is passed to Pollinations.ai. Returns an image URL.
  *       - `interactive` — Returns a JSON array of 5 multiple-choice quiz questions.
  *       - `video` — Returns a JSON array of 5 storyboard scenes.
  *

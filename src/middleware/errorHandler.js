@@ -3,48 +3,65 @@ import { logger } from "../config/logger.js";
 const SUPPORT_HINT = "If the problem persists, please contact support.";
 
 /**
- * Classify and respond to Groq / upstream AI API errors.
- * Groq SDK throws objects with { status, error: { message, type, code } }.
+ * Classify and respond to OpenAI-compatible / upstream AI API errors.
+ * The OpenAI SDK throws APIError objects with { status, error: { type, message } }.
  */
-const handleGroqError = (err, res) => {
+const handleAiError = (err, res) => {
   const status = err.status;
-  const groqCode = err.error?.code;
-  const groqType = err.error?.type;
+  const aiType = err.error?.type;
 
-  if (status === 400 || groqType === "invalid_request_error") {
+  // In development, expose the raw upstream detail so provider/proxy errors
+  // (e.g. an OpenAI-compatible proxy rejecting the key) are diagnosable
+  // instead of hidden behind a generic message.
+  const isDev =
+    process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+  const upstream = isDev
+    ? {
+        upstream: {
+          status,
+          type: aiType,
+          message: err.error?.error?.message || err.error?.message || err.message,
+        },
+      }
+    : {};
+
+  if (status === 400 || aiType === "invalid_request_error") {
     return res.status(422).json({
       success: false,
       error: {
         code: "AI_INVALID_REQUEST",
         message:
           "The request sent to the AI service was malformed. This is likely caused by an extremely unusual prompt. Please rephrase your input and try again.",
+        ...upstream,
       },
     });
   }
 
-  if (status === 401 || groqCode === "invalid_api_key") {
+  if (status === 401 || aiType === "authentication_error") {
     return res.status(502).json({
       success: false,
       error: {
         code: "AI_AUTH_ERROR",
         message:
           "The server could not authenticate with the AI service. This is a configuration issue on our end — please contact support.",
+        ...upstream,
       },
     });
   }
 
-  if (status === 403) {
+  if (status === 403 || aiType === "permission_error") {
     return res.status(502).json({
       success: false,
       error: {
         code: "AI_FORBIDDEN",
         message:
           "Access to the AI service was denied. The API key may lack the required permissions. Please contact support.",
+        ...upstream,
       },
     });
   }
 
-  if (status === 404) {
+  if (status === 404 || aiType === "not_found_error") {
     return res.status(502).json({
       success: false,
       error: {
@@ -77,7 +94,7 @@ const handleGroqError = (err, res) => {
     });
   }
 
-  if (status === 429 || groqCode === "rate_limit_exceeded") {
+  if (status === 429 || aiType === "rate_limit_error") {
     return res.status(503).json({
       success: false,
       error: {
@@ -85,6 +102,19 @@ const handleGroqError = (err, res) => {
         message:
           "The AI service has temporarily rate-limited this server. Please wait 10–30 seconds and try again.",
         retryAfterSeconds: 30,
+      },
+    });
+  }
+
+  // Provider content-moderation filter (e.g. AgentRouter "sensitive words").
+  if (err.error?.code === "sensitive_words_detected") {
+    return res.status(422).json({
+      success: false,
+      error: {
+        code: "AI_CONTENT_FLAGGED",
+        message:
+          "The AI provider's content filter flagged this request. Please rephrase your prompt or topic and try again.",
+        ...upstream,
       },
     });
   }
@@ -123,7 +153,19 @@ const handleGroqError = (err, res) => {
     });
   }
 
-  // Unknown Groq error
+  if (status === 529 || aiType === "overloaded_error") {
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: "AI_OVERLOADED",
+        message:
+          "The AI service is temporarily overloaded. Please wait a few seconds and try again.",
+        retryAfterSeconds: 30,
+      },
+    });
+  }
+
+  // Unknown AI error
   return res.status(502).json({
     success: false,
     error: {
@@ -258,13 +300,13 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // ── Groq SDK / upstream AI errors ──────────────────────────────────────
+  // ── OpenAI SDK / upstream AI errors ────────────────────────────────────
 
   if (err.status && err.error !== undefined) {
-    return handleGroqError(err, res);
+    return handleAiError(err, res);
   }
 
-  // Network / connection errors reaching Groq
+  // Network / connection errors reaching the AI service
   if (err.code === "ECONNREFUSED" || err.code === "ENOTFOUND") {
     return res.status(502).json({
       success: false,

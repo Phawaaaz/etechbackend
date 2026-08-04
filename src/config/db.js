@@ -1,7 +1,13 @@
 import mongoose from "mongoose";
+import dns from "node:dns";
 import { logger } from "./logger.js";
 
 let mongoServer;
+
+// Some local/OS DNS resolvers refuse the SRV lookup that `mongodb+srv://` URIs
+// require (surfaces as "querySrv ECONNREFUSED"). Prepend public resolvers so
+// the SRV query succeeds, keeping the system's own resolvers as fallbacks.
+dns.setServers([...new Set(["1.1.1.1", "8.8.8.8", ...dns.getServers()])]);
 
 export const connectDB = async () => {
   try {
